@@ -1,17 +1,25 @@
 
-name: CI
+name: CI (Manual)
 
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+  workflow_dispatch:
+    inputs:
+      run_tests:
+        description: "Run tests?"
+        type: boolean
+        default: true
+        required: true
+      maven_profile:
+        description: "Optional Maven profile (e.g., prod, dev)"
+        type: string
+        required: false
+        default: ""
 
 permissions:
   contents: read
 
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-manual-${{ github.run_id }}
   cancel-in-progress: true
 
 jobs:
@@ -30,10 +38,22 @@ jobs:
           cache: maven
 
       - name: Build & test (produces JUnit + JaCoCo)
-        run: mvn -B clean verify
+        if: ${{ inputs.run_tests }}
+        run: |
+          mvn -B clean verify \
+            ${{ inputs.maven_profile && format('-P {0}', inputs.maven_profile) || '' }}
 
-      - name: Package JAR
-        run: mvn -B -DskipTests package
+      - name: Build without tests
+        if: ${{ !inputs.run_tests }}
+        run: |
+          mvn -B clean package -DskipTests \
+            ${{ inputs.maven_profile && format('-P {0}', inputs.maven_profile) || '' }}
+
+      - name: Package JAR (skip tests to speed packaging)
+        # Safe to run regardless; if tests already ran, it just repackages quickly
+        run: |
+          mvn -B -DskipTests package \
+            ${{ inputs.maven_profile && format('-P {0}', inputs.maven_profile) || '' }}
 
       - name: Upload JAR artifact
         uses: actions/upload-artifact@v4
@@ -41,17 +61,17 @@ jobs:
           name: demo-app
           path: target/*.jar
 
-      # Upload test reports
+      # Upload test reports only when tests ran
       - name: Upload test reports (JUnit)
-        if: always()
+        if: ${{ always() && inputs.run_tests }}
         uses: actions/upload-artifact@v4
         with:
           name: surefire-reports
           path: target/surefire-reports/**
 
-      # Upload coverage report
+      # Upload coverage report only when tests ran
       - name: Upload coverage (JaCoCo HTML/XML)
-        if: always()
+        if: ${{ always() && inputs.run_tests }}
         uses: actions/upload-artifact@v4
         with:
           name: jacoco-report
