@@ -1,3 +1,4 @@
+
 name: CI
 
 on:
@@ -28,7 +29,7 @@ jobs:
           java-version: "17"
           cache: maven
 
-      - name: Build & test
+      - name: Build & test (produces JUnit + JaCoCo)
         run: mvn -B clean verify
 
       - name: Package JAR
@@ -39,3 +40,21 @@ jobs:
         with:
           name: demo-app
           path: target/*.jar
+
+      # Upload test reports
+      - name: Upload test reports (JUnit)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: surefire-reports
+          path: target/surefire-reports/**
+
+      # Upload coverage report
+      - name: Upload coverage (JaCoCo HTML/XML)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-report
+          path: |
+            target/site/jacoco/**
+            target/jacoco.exec
