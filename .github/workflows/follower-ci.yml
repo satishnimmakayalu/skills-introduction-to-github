@@ -1,0 +1,23 @@
+
+name: Follower CI
+
+on:
+  workflow_run:
+    workflows: [ "Primary CI" ]   # Must match the `name:` in primary-ci.yml
+    types:
+      - completed                 # fires after Primary CI finishes (any conclusion)
+
+jobs:
+  proceed_on_success:
+    runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    steps:
+      - name: Echo follow-up
+        run: |
+          echo "Follower CI triggered after Primary CI completed successfully."
+          echo "Primary run id:     ${{ github.event.workflow_run.id }}"
+          echo "Primary conclusion: ${{ github.event.workflow_run.conclusion }}"
+          echo "Primary head SHA:   ${{ github.event.workflow_run.head_sha }}"
+          echo "Primary branch:     ${{ github.event.workflow_run.head_branch }}"
+          echo "Triggered by actor: ${{ github.event.workflow_run.actor.login }}"
+          echo "Done."
