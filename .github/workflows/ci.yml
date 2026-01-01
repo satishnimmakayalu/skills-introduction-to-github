@@ -56,7 +56,7 @@ jobs:
             ${{ inputs.maven_profile && format('-P {0}', inputs.maven_profile) || '' }}
 
       - name: Upload JAR artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: demo-app
           path: target/*.jar
@@ -64,7 +64,7 @@ jobs:
       # Upload test reports only when tests ran
       - name: Upload test reports (JUnit)
         if: ${{ always() && inputs.run_tests }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: surefire-reports
           path: target/surefire-reports/**
@@ -72,7 +72,7 @@ jobs:
       # Upload coverage report only when tests ran
       - name: Upload coverage (JaCoCo HTML/XML)
         if: ${{ always() && inputs.run_tests }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: jacoco-report
           path: |
